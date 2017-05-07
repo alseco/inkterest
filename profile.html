@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+    <html ng-app="myApp">
+    <head>
+        <title>Inkterest</title>
+        <link rel="stylesheet" type="text/css" href="stylesheet.css">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+        
+        <!--modal-->
+        <script data-require="jquery@*" data-semver="3.0.0" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.js"></script>
+        <script data-require="angular.js@1.3.x" src="https://code.angularjs.org/1.3.20/angular.js" data-semver="1.3.20"></script>
+        <script data-require="bootstrap@3.1.1" data-semver="3.1.1" src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+   
+        <script>
+            var myApp = angular.module('myApp', [])
+            myApp.controller('SimpleController', ['$scope', '$http', function($scope, $http) {
+                $scope.search = function(filter){
+                    $http.get('/inkterest/search/' + filter).then(function(response) {
+                        $scope.found = response.data
+                    })
+                } 
+                $scope.showUser = function(){
+                    $http.get('/getUserName').then(function(response) {
+                        $http.get('/inkterest/me/' + response.data.username).then(function(response){
+                            $scope.userDetails = response.data
+                        })
+                        $http.get('/inkterest/me/post/boards/' + response.data.username).then(function(response){
+                            $scope.boards = response.data
+                        })
+                        $http.get('/inkterest/boardno/' + response.data.username).then(function(response){
+                            $scope.boardcount =response.data.count
+                        })
+                        $http.get('/inkterest/following/' + response.data.username).then(function(response){
+                            $scope.following = response.data.count
+                        })
+                        $http.get('/inkterest/followers/' + response.data.username).then(function(response){
+                            $scope.followers =response.data.count
+                        })
+                    })
+                }
+
+                $scope.showUserPost = function(){
+                    $http.get('/getUserName').then(function(response) {
+                        $http.get('/inkterest/me/post/' + response.data.username).then(function(response){
+                            $scope.posts = response.data
+                        })
+                    })
+                }
+
+                $scope.showUserPostByBoard = function(x){
+                    if(x=='All'){
+                        $http.get('/getUserName').then(function(response) {
+                            $http.get('/inkterest/me/post/' + response.data.username).then(function(response){
+                                $scope.posts = response.data
+                            })
+                        }) 
+                    }
+                    else{
+                        $http.get('/getUserName').then(function(response) {
+                            $http.get('/inkterest/me/post-by-board/' + response.data.username + '/' + x).then(function(response){
+                                $scope.posts = response.data
+                            })
+                        }) 
+                    }  
+                }
+
+                $scope.deletePost = function(post){
+                    $http.delete('/inkterest/me/post/delete/' + post).then(function(response){
+                        alert("Successfully deleted the post")
+                        window.parent.location = window.parent.location.href;
+                    })
+                }
+
+                $scope.openModal = function (p){
+                    $scope.post_details = p
+                    $('#zoom-post').on('shown', function () {
+                        $('body').on('wheel.modal mousewheel.modal', function () {
+                            return false;
+                        });
+                    }).on('hidden', function () {
+                        $('body').off('wheel.modal mousewheel.modal');
+                    });
+                    $http.get('/inkterest/me/post/topics/').then(function(response){
+                        $scope.topics = response.data
+                    })
+                }
+
+
+                $scope.editPost = function(editId){
+                    $http.put(('/inkterest/me/post/edit/' + editId),{
+                        content: $scope.new_content,
+                        topic_name: $scope.new_topic
+                    }).then(function(results){
+                        alert("Successfully edited your post")
+                        window.parent.location = window.parent.location.href;
+                    }) 
+                }
+
+                $scope.logout = function(){
+                    $http.get('/logout').then(function(response) {
+                            window.location.href = response.data.redirect
+                    })
+                }
+
+                $scope.openModal2 = function (){
+                    $('#zoom-post').on('shown', function () {
+                        $('body').on('wheel.modal mousewheel.modal', function () {
+                            return false;
+                        });
+                    }).on('hidden', function () {
+                        $('body').off('wheel.modal mousewheel.modal');
+                    });
+                }
+                $scope.editUI = function(userDetails,email,name,pw){
+                    if(email == "" || typeof(email)== 'undefined'){
+                        email= userDetails.email
+                    }
+                    if( name=="" || typeof(name)=='undefined'){
+                        name= userDetails.username
+                    }
+                    if(pw =="" || typeof(pw)=='undefined'){
+                        pw = userDetails.password
+                    }
+                    $http.put(
+                 ('/inkterest/me/editInfo/'+userDetails.username),
+                  {
+                    email: email,
+                    username: name,
+                    password: pw
+                  })
+                    .then(function(results) {
+                      
+                      window.location.href='/profile';
+                    },function(err){
+                    
+                        window.location.href='/home';
+                    }
+                 ) 
+                }
+
+                $scope.openModal3 = function (){
+                    $('#zoom-post').on('shown', function () {
+                        $('body').on('wheel.modal mousewheel.modal', function () {
+                            return false;
+                        });
+                    }).on('hidden', function () {
+                        $('body').off('wheel.modal mousewheel.modal');
+                    });
+                    $http.get('/inkterest/me/post/topics/').then(function(response){
+                        $scope.topics = response.data
+                    })
+                    $http.get('/getUserName').then(function(response) {
+                        $http.get('/inkterest/me/boards/' + response.data.username).then(function(response){
+                            $scope.boards = response.data
+                        })
+                    })
+                }
+
+                $scope.addPost = function(){
+                    $http.get('/getUserName').then(function(response){
+                        $http.post(('/inkterest/me/post/add/' + response.data.username),{
+                            content: $scope.contentAdd,
+                            topic_name: $scope.topicAdd,
+                            board_name: $scope.boardAdd
+                        }).then(function(results){
+                            alert('added')
+                        })
+                    })
+                }
+                
+            }]) 
+        </script>
+    </head>
+    <body id="profile-body" ng-controller="SimpleController">
+        <header>
+            <div id="header-content" ng-init="filter=''">
+                <a href="/"><img id="logo" src="login.png" height="40px" width="40px"></a>
+                <div id="search-box"><input type="text" placeholder="Search" ng-model="filter" style="height: 30px; width: 930px; float: left;"><button ng-click="search(filter)" style="height: 40px; float: left;">Go</button></div>
+                <div><a name="Profile" class="link-button" id="profile" href="/profile" style="font-size: 16px">Profile</a></div>
+                <div><a id="logout" ng-click="logout()">Logout</a></div>
+            </div>
+        </header>
+        <div id="profile-container" ng-init="showUser()">
+            <div id="upper-profile" ng-repeat="x in userDetails">
+                <div id="profile-icons">
+                    <div><a ng-click="openModal2()" data-toggle="modal" data-target="#edit-user" style="cursor: pointer"><i class="material-icons medium">settings</i></a></div>
+                </div>
+                <div id="user-plus-img">
+                    <div id="profile-username">{{x.username}}</div>
+                    <div><img id="img-profile" src="profile.png" height="200px" width="200px"></div>
+                </div>
+                <div id="stats-container">
+                    <div class="stats"><div class="count">{{boardcount}}</div><div class="title">Boards</div></div>
+                    <div class="stats"><div class="count">0</div><div class="title">Pins</div></div>
+                    <div class="stats"><div class="count">{{x.likes}}</div><div class="title">Likes</div></div>
+                    <div class="stats"><div class="count">{{following}}</div><div class="title">Following</div></div>
+                    <div class="stats"><div class="count">{{followers}}</div><div class="title">Followers</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="profile-content">
+            <div class="post-container" ng-init="showUserPost()">
+                <div id="middle-div">
+                    <div ng-init="getTopics()">
+                        <div id="dropdown-topic-container">
+                            <div id="dropdown-title">Board: </div>
+                            <select id="dropdown-topic" ng-model="board_chosen">
+                                <option>All</option>
+                                <option ng-repeat="board in boards" ng-model="board_chosen">{{board.board_name}}</option>
+                            </select>
+                            <button id="view-button" ng-click="showUserPostByBoard(board_chosen)">View</button>
+                            <a id="add-pin" ng-click="openModal3()" data-toggle="modal" data-target="#add-post">Pin</a>
+                        </div>
+                        <div id="buttons-for-board">
+
+                        </div>
+                    </div>
+                </div>
+                <div id="post-content">
+                    <div ng-repeat="x in posts" id="post-details">
+                        <div class="author"><a class="clickable-username" href="#"><img src="profile.png" id="profile-img" height="30px" width="30px"></a><a href="#" class="clickable-username">{{x.username}}</a><img id="pin-img" src="pin.png" height="30px" width="30px"></div>
+                        <div style="margin-left: 20px; font-size: 12px; margin-top: 20px; color: #a1a1a1;">{{x.time_of_post}}</div>
+                        <div class="content" ng-click="openModal(x)" data-toggle="modal" data-target="#zoom-post">{{x.content}}</div> 
+                        <div class="hashtag">#{{x.topic_name | lowercase}}</div>
+                        <div id="profile-board-name">{{x.board_name}}</div>
+                        <div>
+                            <div class="interact-container" id="delete-container" ng-click="openModal(x)" data-toggle="modal" data-target="#confirm-post" ><a class="interact" id="comment">Delete</a></div>
+                            <div class="interact-container" id="edit-container" ng-click="openModal(x)" data-toggle="modal" data-target="#edit-post"><a href="#" class="interact" id="pin">Edit</a></div>
+                            <div class="interact-container-like" id="like-container"><div class="likes-count" id="like">Likes({{x.likes}})</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="zoom-post" class="modal">
+            <div class="other-modal-content animate">
+                <div class="modal-container">
+                    <div id="content-side">
+                        <div id="content-side-container">
+                            <div class="author-in-modal"><img src="profile.png" id="profile-img-in-modal" height="50px" width="50px">{{post_details.username}}<img id="pin-img-in-modal" src="pin.png" height="50px" width="50px"></div>
+                            <div class="content-in-modal">{{post_details.content}}</div> 
+                            <div class="hashtag-in-modal">#{{post_details.topic_name | lowercase}}</div>
+                        </div>
+                        <div id="comment-section">
+                            <textarea id="modal-textarea" maxlength="100" placeholder="Write a comment..."></textarea>
+                            <div id="comment-title">Comments:</div>
+                        </div>
+                    </div>
+                    <div id="to-do-side">
+                        <div class="options">
+                            <button class="options-link" data-dismiss="modal" aria-label="Close">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="create-board" class="modal">
+            <div class="confirm-modal-content animate">
+                <div><input height="50px" width="90%" type="text" placeholder="Enter board name..." ng-model="new_board_name" required></div>
+                <div style="margin-top: 50px">
+                    <a style="text-decoration: none; color: white; border-radius: 7px; padding: 10px 15px; float: right; margin-right: 30px; background-color: #0a306d" ng-click="createBoard(new_board_name)">Create</a>
+                    <a style="text-decoration: none; color: white; border-radius: 7px; padding: 10px 15px; float: right; margin-right: 30px; background-color: #0a306d" data-dismiss="modal" aria-label="Close">Cancel</a>
+                </div>
+
+            </div>
+        </div>
+        <div id="add-post" class="modal">
+            <div class="add-modal-content animate">
+
+            <form>
+                <div class="author"><a class="clickable-username" href="#"><img src="profile.png" id="profile-img" height="30px" width="30px"></a><a href="#" class="clickable-username">{{post_details.username}}</a><img id="pin-img" src="pin.png" height="30px" width="30px"></div>
+                <br><br>
+                <div id="label-add">
+                <label for="add-textarea" >Content</label>
+                </div>
+                <textarea id="add-textarea" placeholder="Add Content..." maxlength="250" ng-model="contentAdd"></textarea>
+                <br><br>
+                <div id="label-add">
+                <label>Topic</label>
+                </div>
+                <div ng-init="getTopics()" id = "select-button">
+                    <div>
+                        <select id="topic-add" ng-model="topicAdd">
+                            <option selected disabled>Select a topic</option>
+                            <option ng-repeat="topic in topics">{{topic.topic_name}}</option>
+                        </select>
+                    </div>
+                </div>
+                <br>
+                <div id="label-add">
+                <label> Board </label>
+                </div>
+                <div ng-init="getBoards()" id = "select-button">
+                    <div>
+                        <select ng-model="boardAdd">
+                            <option selected disabled>Select a board</option>
+                            <option ng-repeat="board in boards">{{board.board_name}}</option>
+                        </select>
+                    </div>
+                </div>                
+                <br>
+                <div id="add-cancel">
+                    <a class="add-cancel-options-link" ng-click="addPost()">Add Pin</a> 
+                    <a class="add-cancel-options-link" data-dismiss="modal" aria-label="Close">Cancel</a>
+                </div>
+            </form>   
+            </div>
+        </div>
+        <div id="confirm-post" class="modal">
+            <div class="confirm-modal-content animate">
+                <div id="prompt-container">
+                    <div id="prompt">Do you really want to delete this post?</div>
+                </div>
+                <div id="delete-buttons">
+                    <a class="delete-options-link" ng-click="deletePost(post_details.pin_id)">Confirm</a>
+                    <a class="delete-options-link" data-dismiss="modal" aria-label="Close">Cancel</a>
+                </div>
+            </div>
+        </div>
+        <div id="edit-user" class="modal">
+            <div class="edit-user-info animate" ng-repeat="x in userDetails">
+                <h3 style="text-align: center;">Edit User Information</h3><br><br>
+                <form>
+                 Edit Email: <input placeholder="{{x.email}}" type="text" ng-model="useremail"><br>
+                 Edit Username: <input placeholder="{{x.username}}" type="text" ng-model="uname"><br>
+                 Edit Password: <input type="password" ng-model="pw">
+                <button style="float: right;" ng-click= "editUI(x,useremail,uname,pw)">Edit</button>
+                </form>
+            </div>
+        </div>
+        <!--END -->
+        <div id="edit-post" class="modal">
+            <div class="edit-modal-content animate">
+                <form>
+                    <div class="author"><a class="clickable-username" href="#"><img src="profile.png" id="profile-img" height="30px" width="30px"></a><a href="#" class="clickable-username">{{post_details.username}}</a><img id="pin-img" src="pin.png" height="30px" width="30px"></div>
+                    <textarea id="edit-textarea" rows="5" placeholder="Edit your post..." maxlength="250" ng-model="new_content" required></textarea>
+                    <div ng-init="getTopics()">
+                        <div id="dropdown-topic-container">
+                            <div id="dropdown-title">Topic: </div>
+                            <select id="dropdown-topic" ng-model="new_topic">
+                                <option selected disabled>{{post_details.topic_name}}</option>
+                                <option ng-repeat="topic in topics">{{topic.topic_name}}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="edit-buttons">
+                        <a class="edit-options-link" href="/profile" ng-click="editPost(post_details.pin_id)">Save Changes</a>
+                        <a class="edit-options-link" data-dismiss="modal" aria-label="Close">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+    <html ng-app="myApp">
+    <head>
+        <title>Inkterest</title>
+        <link rel="stylesheet" type="text/css" href="stylesheet.css">
+        <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+        
+        <!--modal-->
+        <script data-require="jquery@*" data-semver="3.0.0" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.0.0/jquery.js"></script>
+        <script data-require="angular.js@1.3.x" src="https://code.angularjs.org/1.3.20/angular.js" data-semver="1.3.20"></script>
+        <script data-require="bootstrap@3.1.1" data-semver="3.1.1" src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+
+
+        <script>
+            var myApp = angular.module('myApp', [])
+            myApp.controller('SimpleController', ['$scope', '$http', function($scope, $http) {
+                $scope.search = function(filter){
+                    $http.get('/inkterest/search/' + filter).then(function(response) {
+                        $scope.found = response.data
+                    })
+                }
+
+                $scope.showFollowed = function(){
+                    $http.get('/getUserName').then(function(response){
+                        $http.get('/inkterest/initFeed/' + response.data.username).then(function(response) {
+                            $scope.found = response.data
+                        })
+                    })
+                }
+
+                $scope.openModal = function (p){
+                    $scope.post_details = p
+                    $('#zoom-post').on('shown', function () {
+                        $('body').on('wheel.modal mousewheel.modal', function () {
+                            return false;
+                        });
+                    }).on('hidden', function () {
+                        $('body').off('wheel.modal mousewheel.modal');
+                    });
+                }
+
+                $scope.logout = function(){
+                    $http.get('/logout').then(function(response) {
+                            window.location.href = response.data.redirect
+                    })
+                }
+
+                $scope.incrementLike = function(other_user){
+                    other_user.likes = other_user.likes+1
+                    $http.put('/inkterest/incotherLike/'+ other_user.pin_id,
+                        {
+                        likes: other_user.likes
+                      }).then(function(response) {
+                    })
+
+                    $http.get('/getUserName').then(function(response) {
+                            $http.get('/inkterest/me/' + response.data.username).then(function(response) {
+                            for(e of response.data){
+                               $scope.username= e.username
+                               $scope.likes= e.likes
+                            }
+                           $scope.likes= $scope.likes+1
+                            $http.put('/inkterest/incmyLike/' + $scope.username,
+                                {
+                                    likes: $scope.likes
+                                }).then(function(response) {
+                            }) 
+                        })   
+                    })
+                }
+            }]) 
+        </script>
+    </head>
+    <body ng-controller="SimpleController">
+        <header>
+            <div id="header-content" ng-init="filter=''">
+                <a href="/home"><img id="logo" src="login.png" height="40px" width="40px"></a>
+                <div id="search-box"><input type="text" placeholder="Search" ng-model="filter" style="height: 30px; width: 930px; float: left;"><button ng-click="search(filter)" style="height: 40px; float: left;">Go</button></div>
+                <div><a name="Profile" class="link-button" id="profile" href="/profile" style="font-size: 16px;">Profile</a></div>
+                <div><a id="logout" ng-click="logout()">Logout</a></div>
+            </div>
+        </header>
+        <br class="clear" />
+        <div class="post-container" ng-init="showFollowed()">
+            <div id="post-content">
+                <div ng-repeat="x in found" id="post-details">
+                    <div class="author"><a class="clickable-username" href="#"><img src="profile.png" id="profile-img" height="30px" width="30px"></a><a href="#" class="clickable-username">{{x.username}}</a><img id="pin-img" src="pin.png" height="30px" width="30px"></div>
+                    <div style="margin-left: 20px; font-size: 12px; margin-top: 20px; color: #a1a1a1;">{{x.time_of_post}}</div>
+                    <div class="content" ng-click="openModal(x)" data-toggle="modal" data-target="#zoom-post">{{x.content}}</div> 
+                    <div class="hashtag">#{{x.topic_name | lowercase}}</div>
+                    <div>
+                        <div class="interact-container" id="comm-container"><a href="#" class="interact" id="comment">Comment</a></div>
+                        <div class="interact-container" id="pin-container"><a href="#" class="interact" id="pin">Pin</a></div>
+                        <div class="interact-container" id="like-container"><a ng-click="incrementLike(x)" class="interact" id="like">Like({{x.likes}})</a></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="zoom-post" class="modal">
+            <div class="other-modal-content animate">
+                <div class="modal-container">
+                    <div id="content-side">
+                        <div id="content-side-container">
+                            <div class="author-in-modal"><img src="profile.png" id="profile-img-in-modal" height="50px" width="50px">{{post_details.username}}<img id="pin-img-in-modal" src="pin.png" height="50px" width="50px"></div>
+                            <div class="content-in-modal">{{post_details.content}}</div> 
+                            <div class="hashtag-in-modal">#{{post_details.topic_name | lowercase}}</div>
+                        </div>
+                        <div id="comment-section">
+                            <textarea id="modal-textarea" maxlength="100" placeholder="Write a comment..."></textarea>
+                            <div id="comment-title">Comments:</div>
+                        </div>
+                    </div>
+                    <div id="to-do-side">
+                        <div class="options">
+                            <button class="options-link" data-dismiss="modal" aria-label="Close">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

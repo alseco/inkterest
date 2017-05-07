@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+    <html ng-app="myApp">
+    <head>
+        <title>Inkterest</title>
+        <link rel="stylesheet" type="text/css" href="/css/stylesheet.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+         <!-- Cascading Style Sheets -->
+        <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+        <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link type="text/css" rel="stylesheet" href="/css/materialize.min.css" media="screen,projection"/>
+
+         <!-- Javascript files -->
+        <script src="/js/jquery-3.1.1.min.js"></script>
+        <script src="/js/materialize.min.js"></script>
+        <script src="/js/angular.min.js"></script>
+        <script src="/js/angular-route.min.js"></script>
+         <script>
+            var myApp = angular.module('myApp', [])
+            myApp.controller('SimpleController', ['$scope', '$http', function($scope, $http) {
+                $scope.authenticate = function(uname, pw){
+                    x = {uname: uname, pw:pw}
+                    $http.post('/login', x).then(function(response) {
+                            window.location.href = response.data.redirect
+                    })
+                }
+                $scope.email=''
+                $scope.username=''
+                $scope.password=''
+                $scope.signup = function() {
+                $http.post(
+                  '/inkterest/user_insert/',
+                  {
+                    email: $scope.email,
+                    username: $scope.username,
+                    password: $scope.password
+                  })
+                    .then(function(results) {
+                      Materialize.toast(results.message, 4000, 'black');
+                      $scope.authenticate($scope.username, $scope.password);
+                       $scope.email = ''
+                      $scope.username = ''
+                      $scope.password = ''
+                    },function(err){
+                        Materialize.toast(err.message, 4000, 'black');
+                        window.location.href='/';
+                    }
+                )
+              } 
+            }]) 
+        </script>
+    </head>
+    <body ng-app ng-controller="SimpleController" style="background-color: #212121">
+        <div style="position:relative">
+       <div class="parallax-container" >
+        <div class="parallax"><img src="paral.jpg"></div>
+      </div>
+      <div style="position:fixed;right:0;top:0;">
+        <a href="#modal1" id="login-button">Login</a>
+      </div>
+      <div id="modal1" class="modal">
+        <div class="modal-content">
+          <h4 style="text-align: center;">Login</h4><br><br>
+          <form>
+          Username: <input placeholder="Enter username" type="text" ng-model="username" required><br>
+          Password: <input placeholder="Enter password" type="password" ng-model="password" required>
+          <button class="waves-effect waves-green btn-flat"type="submit" name="action" style="float: right;" ng-click= "authenticate(username, password)">Submit
+            <i class="material-icons right">send</i>
+          </button>
+          </form>
+        </div>
+      </div>
+      <div class="section white">
+        <div class="row container">
+          <center><img src="login.png" height=150 width= 160></center>
+          <center><h3 class="header">Color your life with Inkterest!</h3></center><br>
+            <center><a href="#modal2" id="signup-button">Sign-up</a></center><br><br><br>
+             <!-- Modal Structure -->
+              <div id="modal2" class="modal">
+                <div class="modal-content">
+                  <h4 style="text-align: center;">Sign-up</h4><br><br>
+                  <form>
+                  Email: <input  placeholder="Enter email" type="text" ng-model= "email" required><br>
+                  Username: <input  placeholder="Enter username" type="text" ng-model= "username" required><br>
+                  Password: <input  placeholder="Enter password" type="password" ng-model="password" required>
+                  <input type="submit" name="Submit" style="float: right; padding:10px 25px" ng-click=signup()>
+                  </form>
+                </div>
+              </div>
+
+        </div>
+      </div>
+      <div>
+              <div id="modal3" class="modal">
+                <div class="modal-content">
+                  <h4 style="text-align: center;">Something</h4><br><br>
+                </div>
+              </div>
+        </div>
+      </div>
+      <div class="row" style="color: white">
+            <div class="col s4">
+              <p class="text-center"><strong>Jerico Belmonte</strong></p><br>
+              <a>
+                <img src="jerico.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+              </a>
+              <div>
+                <p>In a relationship with Aya</p>
+              </div>
+            </div>
+            <div class="col s4">
+              <p class="text-center"><strong>Alyssa De Guzman</strong></p><br>
+              <a>
+                <img src="sasa.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+              </a>
+              <div>
+                <p>Forever THIRDWHEEL</p>
+              </div>
+            </div>
+            <div class="col s4">
+              <p class="text-center"><strong>Aizaya Seco</strong></p><br>
+              <a>
+                <img src="aya.jpg" class="img-circle person" alt="Random Name" width="255" height="255">
+              </a>
+              <div>
+                <p>In a relationship with Jerico</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center" style="background-color:white ">
+          </a><br><br>
+          <p style="text-align: center;padding-bottom: 40px;">INKterest © 2016 - All Rights Reserved</p>
+        </footer>
+
+         <script src="/js/init.js"></script>
+    </body>
+</html>
